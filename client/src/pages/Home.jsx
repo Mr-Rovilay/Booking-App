@@ -1,3 +1,4 @@
+import About from "../components/About"
 import Features from "../components/Features"
 import Header from "../components/Header"
 import Hero from "../components/Hero"
@@ -11,6 +12,8 @@ const Home = () => {
         <Hero/>
         <Features/>
         <Listing/>
+        <About/>
+        <Footer/>
     </div>
   )
 }
