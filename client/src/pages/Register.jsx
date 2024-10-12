@@ -1,8 +1,15 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaUpload } from "react-icons/fa";
+import axios from "axios";
+import toast from 'react-hot-toast';
+
+
+import { url } from "../App";
 
 const Register = () => {
+
+  const navigate = useNavigate(); // Hook to programmatically navigate
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,6 +21,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // Loading state
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -28,10 +36,43 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Register Data Submitted", formData);
-    // Handle registration logic here
+    setIsLoading(true); // Set loading state to true
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Prepare form data for upload
+      const userData = new FormData();
+      Object.keys(formData).forEach((key) => {
+        userData.append(key, formData[key]);
+      });
+
+      const response = await axios.post( url + "/api/auth/register", userData, {
+        headers: {
+          "Content-Type": "multipart/form-data", // Important for file uploads
+        },
+      });
+      const { token } = response.data;
+      localStorage.setItem("token", token);
+      toast.success('Registration successful! Please check your email for a verification code.');
+      navigate("/verify-email");
+    } catch (error) {
+      if (error.response && error.response.data) {
+        toast.error(error.response.data.error); // Display server error message
+      } else {
+        toast.error("An error occurred. Please try again.");
+      }
+      console.error(error);
+    } finally {
+      setIsLoading(false); // Reset loading state
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -41,6 +82,15 @@ const Register = () => {
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword((prevState) => !prevState);
   };
+
+  useEffect(() => {
+    // Clean up the image preview URL when the component unmounts
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 py-12 bg-gray-100 sm:px-6 lg:px-8">
@@ -178,8 +228,9 @@ const Register = () => {
             <button
               type="submit"
               className="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md group bg-secondary hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+              disabled={isLoading} // Disable button while loading
             >
-              Register
+              {isLoading ? "Registering..." : "Register"} {/* Change button text */}
             </button>
           </div>
         </form>
