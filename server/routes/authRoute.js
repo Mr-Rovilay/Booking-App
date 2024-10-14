@@ -1,5 +1,5 @@
 import express from 'express';
-import { forgotPassword, login, logout, resetPassword, signup, verifyEmail } from '../controllers/authControllers.js';
+import { forgotPassword, login, resetPassword, signup } from '../controllers/authControllers.js';
 const router = express.Router();
 import multer from 'multer';
 
@@ -26,11 +26,7 @@ const upload = multer({ storage,
 
 router.post("/register",upload.single("profileImage"), signup);
 router.post("/login", login);
-router.post("/logout", logout);
-
-router.post("/verify-email", verifyEmail);
 router.post("/forgot-password", forgotPassword);
-
 router.post("/reset-password/:token", resetPassword);
 
 export default router

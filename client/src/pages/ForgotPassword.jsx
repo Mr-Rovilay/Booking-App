@@ -57,7 +57,7 @@ const ForgotPassword = () => {
           </form>
         ) : (
           <div className="mt-8 text-sm text-center text-green-600">
-            We&apos ve sent a password reset link to your email: {email}. Check your inbox.
+            We&apos;ve sent a password reset link to your email: {email}. Check your inbox.
           </div>
         )}
 

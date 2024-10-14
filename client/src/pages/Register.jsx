@@ -4,12 +4,10 @@ import { FaEye, FaEyeSlash, FaUpload } from "react-icons/fa";
 import axios from "axios";
 import toast from 'react-hot-toast';
 
-
 import { url } from "../App";
 
 const Register = () => {
-
-  const navigate = useNavigate(); // Hook to programmatically navigate
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -18,10 +16,11 @@ const Register = () => {
     profileImage: null,
   });
 
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -34,44 +33,106 @@ const Register = () => {
         [name]: value,
       });
     }
+    // Clear error when user starts typing
+    setErrors({
+      ...errors,
+      [name]: '',
+    });
   };
+
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = {};
+
+    // Name validation
+    if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters long";
+      isValid = false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    // Password validation
+    if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+      isValid = false;
+    }
+
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      isValid = false;
+    }
+
+    // Image validation
+    if (!formData.profileImage) {
+      newErrors.profileImage = "Please upload a profile image";
+      isValid = false;
+    } else {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(formData.profileImage.type)) {
+        newErrors.profileImage = "Please upload a valid image file (JPEG, PNG, or GIF)";
+        isValid = false;
+      }
+      if (formData.profileImage.size > 5 * 1024 * 1024) { // 5MB limit
+        newErrors.profileImage = "Image size should not exceed 5MB";
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+
+    // Use toast to display the first error message found, if any
+    if (!isValid) {
+      const firstError = Object.values(newErrors)[0]; // Get the first error message
+      toast.error(firstError);
+    }
+
+    return isValid;
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading state to true
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match.");
-      setIsLoading(false);
+    
+    if (!validateForm()) {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // Prepare form data for upload
       const userData = new FormData();
       Object.keys(formData).forEach((key) => {
         userData.append(key, formData[key]);
       });
 
-      const response = await axios.post( url + "/api/auth/register", userData, {
+      const response = await axios.post(`${url}/api/auth/register`, userData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Important for file uploads
+          "Content-Type": "multipart/form-data",
         },
       });
-      const { token } = response.data;
-      localStorage.setItem("token", token);
-      toast.success('Registration successful! Please check your email for a verification code.');
-      navigate("/verify-email");
+      
+    
+        const { token } = response.data;
+        localStorage.setItem("token", token);
+        toast.success('Registration successful!');
+        navigate("/login");
+      
     } catch (error) {
       if (error.response && error.response.data) {
-        toast.error(error.response.data.error); // Display server error message
+        toast.error(error.response.data.error);
       } else {
         toast.error("An error occurred. Please try again.");
       }
       console.error(error);
     } finally {
-      setIsLoading(false); // Reset loading state
+      setIsLoading(false);
     }
   };
 
@@ -84,7 +145,6 @@ const Register = () => {
   };
 
   useEffect(() => {
-    // Clean up the image preview URL when the component unmounts
     return () => {
       if (imagePreview) {
         URL.revokeObjectURL(imagePreview);
@@ -117,7 +177,7 @@ const Register = () => {
                 id="name"
                 name="name"
                 type="text"
-                required
+             
                 className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none rounded-t-md focus:outline-none focus:ring-secondary focus:border-secondary focus:z-10 sm:text-sm"
                 placeholder="Full Name"
                 value={formData.name}
@@ -134,7 +194,7 @@ const Register = () => {
                 id="email"
                 name="email"
                 type="email"
-                required
+             
                 className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none focus:outline-none focus:ring-secondary focus:border-secondary focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={formData.email}
@@ -151,7 +211,7 @@ const Register = () => {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                required
+              
                 className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none focus:outline-none focus:ring-secondary focus:border-secondary focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={formData.password}
@@ -176,7 +236,7 @@ const Register = () => {
                 id="confirmPassword"
                 name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
-                required
+              
                 className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none rounded-b-md focus:outline-none focus:ring-secondary focus:border-secondary focus:z-10 sm:text-sm"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
